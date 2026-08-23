@@ -1,23 +1,28 @@
 package mr
 
-//
-// RPC definitions.
-//
-// remember to capitalize all names.
-//
+// RequestTaskArgs is an empty struct used for
+// requesting a task from the coordinator.
+type RequestTaskArgs struct{}
 
-//
-// example to show how to declare the arguments
-// and reply for an RPC.
-//
-
-type ExampleArgs struct {
-	X int
+// RequestTaskReply contains the details of the task
+// assigned to a worker, including the task type,
+// file name, task number, and the number of reduce or map tasks.
+type RequestTaskReply struct {
+	TaskType   string
+	File       string
+	TaskNumber int
+	NReduce    int
+	NMap       int
 }
 
-type ExampleReply struct {
-	Y int
+// ReportTaskArgs contains the details of a completed task reported by a worker,
+// including the task type, task number, and the file name associated with the task.
+type ReportTaskArgs struct {
+	TaskType   string
+	TaskNumber int
+	File       string
 }
 
-// Add your RPC definitions here.
-
+// ReportTaskReply is an empty struct used for acknowledging
+// the completion of a task reported by a worker.
+type ReportTaskReply struct{}
