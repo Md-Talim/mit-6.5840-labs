@@ -9,7 +9,7 @@ Building a strong foundation in distributed systems: consensus, replication, fau
 | Done | Lab                          | Link                                                                       |
 | ---- | ---------------------------- | -------------------------------------------------------------------------- |
 | [x]  | Lab 1 — MapReduce            | [lab-mr.html](https://pdos.csail.mit.edu/6.824/labs/lab-mr.html)           |
-| [ ]  | **Lab 2** — Key/Value Server | [lab-kvsrv1.html](https://pdos.csail.mit.edu/6.824/labs/lab-kvsrv1.html)   |
+| [x]  | **Lab 2** — Key/Value Server | [lab-kvsrv1.html](https://pdos.csail.mit.edu/6.824/labs/lab-kvsrv1.html)   |
 | [ ]  | **Lab 3** — Raft             | [lab-raft1.html](https://pdos.csail.mit.edu/6.824/labs/lab-raft1.html)     |
 | [ ]  | 3A — Leader election         |                                                                            |
 | [ ]  | 3B — Log                     |                                                                            |
@@ -92,3 +92,33 @@ cat mr-out-* | sort
 - **JSON-encoded intermediate files**: Map output written as `mr-X-Y` for correct reduce bucket partitioning
 - **Mutex-protected coordinator**: All shared state guarded by `sync.Mutex` for concurrent RPC handling
 - **Graceful worker exit**: Workers exit when coordinator is unreachable or signals job completion
+
+## Lab 2: Key/Value Server
+
+A versioned in-memory key/value server and client, extended to handle unreliable RPC communication and distributed lock acquisition.
+
+### What it does
+
+- Provides `Get` and versioned `Put` operations over RPC
+- Client retries RPCs when the network drops a request or response
+- Handles ambiguous `Put` results using `ErrMaybe`
+- Implements a distributed lock using the key/value server
+- Handles ambiguous lock acquisition by checking whether the client became the lock owner
+- Passes the complete Lab 2 test suite, including unreliable-network tests with multiple concurrent clients
+
+### Implementation files
+
+| File                                             | Purpose                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------ |
+| [`kvsrv1/server.go`](src/kvsrv1/server.go)       | Key/value server implementing `Get` and versioned `Put`                        |
+| [`kvsrv1/client.go`](src/kvsrv1/client.go)       | `Clerk` responsible for making RPC calls and handling unreliable communication |
+| [`kvsrv1/lock/lock.go`](src/kvsrv1/lock/lock.go) | Distributed lock acquisition and release                                       |
+
+### Key design decisions
+
+- **Versioned writes**: `Put` uses the client's expected version to detect concurrent updates
+- **RPC retries**: The client retries when an RPC call fails because of an unreliable network
+- **Ambiguous writes**: A failed `Put` may have been applied by the server even if the response was lost, so subsequent failures can be reported as `ErrMaybe`
+- **Lock ownership**: Each lock client has a unique client ID stored as the lock value
+- **Ambiguous lock acquisition**: After `ErrMaybe`, the client checks the current lock owner; if it is itself, the acquisition succeeded
+- **Concurrent clients**: The implementation handles multiple clients competing for the same lock over an unreliable network
