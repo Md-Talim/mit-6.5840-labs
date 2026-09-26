@@ -41,6 +41,13 @@ func (lk *Lock) Acquire() {
 		if err == rpc.OK {
 			return
 		}
+		if err == rpc.ErrMaybe {
+			value, _, _ := lk.ck.Get(lk.lockname)
+			if value == lk.clientID {
+				return
+			}
+			continue
+		}
 	}
 }
 
